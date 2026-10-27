@@ -10,3 +10,8 @@ venv/
 .env.*.local
 *.log
 .DS_Store
+
+# local databases and virtualenvs
+*.db
+.venv/
+.pytest_cache/
