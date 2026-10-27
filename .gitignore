@@ -15,3 +15,7 @@ venv/
 *.db
 .venv/
 .pytest_cache/
+
+# local tooling
+.claude/
+frontend/next-env.d.ts
