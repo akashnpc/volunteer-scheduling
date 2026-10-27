@@ -1,3 +1,4 @@
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -11,7 +12,8 @@ from sqlalchemy.pool import StaticPool
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app import clock  # noqa: E402
-from app.db import get_db  # noqa: E402
+from app.config import _normalise_db_url  # noqa: E402
+from app.db import Base, get_db  # noqa: E402
 from app.db_setup import init_db  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import COORDINATOR, VOLUNTEER, Program, ProgramMember, User  # noqa: E402
@@ -30,9 +32,16 @@ def frozen_clock():
 
 @pytest.fixture()
 def engine():
-    eng = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    """In-memory SQLite by default. Set TEST_DATABASE_URL to run the same suite against Postgres."""
+    url = os.getenv("TEST_DATABASE_URL")
+    if url:
+        eng = create_engine(_normalise_db_url(url))
+        Base.metadata.drop_all(eng)
+    else:
+        eng = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     init_db(eng)
-    return eng
+    yield eng
+    eng.dispose()
 
 
 @pytest.fixture()

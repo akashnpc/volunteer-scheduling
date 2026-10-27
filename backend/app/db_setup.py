@@ -2,11 +2,15 @@
 
 Run at startup; every statement is idempotent so it is safe to run repeatedly.
 """
+import logging
+
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
 from app import models  # noqa: F401  (registers tables on Base.metadata)
 from app.db import Base
+
+logger = logging.getLogger(__name__)
 
 APPEND_ONLY_MSG = "shift_events is append-only: rows cannot be updated or deleted"
 
@@ -52,11 +56,21 @@ def init_db(engine: Engine) -> None:
         if engine.dialect.name == "postgresql":
             for stmt in POSTGRES_STATEMENTS:
                 conn.execute(text(stmt))
-            # Supabase exposes the public schema over its REST API. Turning row
-            # level security on with no policies shuts that door; our backend
-            # connects as the table owner, which is not subject to RLS.
-            for table in Base.metadata.tables:
-                conn.execute(text(f'ALTER TABLE "{table}" ENABLE ROW LEVEL SECURITY'))
         elif engine.dialect.name == "sqlite":
             for stmt in SQLITE_STATEMENTS:
                 conn.execute(text(stmt))
+    if engine.dialect.name == "postgresql":
+        _enable_row_level_security(engine)
+
+
+def _enable_row_level_security(engine: Engine) -> None:
+    """Supabase exposes the public schema over its REST API. Turning row level
+    security on with no policies shuts that door; our backend connects as the
+    table owner, which is not subject to RLS. Best effort: a hardening step,
+    so a failure must not stop the app from starting."""
+    for table in Base.metadata.tables:
+        try:
+            with engine.begin() as conn:
+                conn.execute(text(f'ALTER TABLE "{table}" ENABLE ROW LEVEL SECURITY'))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Could not enable row level security on %s: %s", table, exc)
