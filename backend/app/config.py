@@ -21,6 +21,8 @@ JWT_SECRET = os.getenv("JWT_SECRET", "dev-only-secret-never-use-in-production-00
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))
 # Comma-separated list of allowed browser origins, e.g. https://my-app.vercel.app
 CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",") if o.strip()]
+# Optional regex for extra allowed origins, e.g. Vercel preview URLs: https://.*\.vercel\.app
+CORS_ORIGIN_REGEX = os.getenv("CORS_ORIGIN_REGEX") or None
 # All shift times are wall-clock times in this zone ("organisation time").
 ORG_TIMEZONE = os.getenv("ORG_TIMEZONE", "UTC")
 SEED_ON_STARTUP = os.getenv("SEED_ON_STARTUP", "false").lower() == "true"

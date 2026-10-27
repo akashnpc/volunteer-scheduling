@@ -1,0 +1,26 @@
+# Render blueprint for the API. In the dashboard: New > Blueprint > pick this repo.
+# Values marked `sync: false` are asked for once in the dashboard and never stored in git.
+services:
+  - type: web
+    name: volunteer-scheduling-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: DATABASE_URL        # Supabase *Session pooler* connection string
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS        # your Vercel URL, e.g. https://volunteer-scheduling.vercel.app
+        sync: false
+      - key: CORS_ORIGIN_REGEX
+        value: https://.*\.vercel\.app
+      - key: ORG_TIMEZONE
+        value: UTC
+      - key: SEED_ON_STARTUP     # fills an empty database with demo data
+        value: "true"
