@@ -9,8 +9,8 @@ Everything in this repository is therefore AI-drafted. **I am accountable for it
 explain it**: the sections "What you corrected" record the places where the first draft was wrong, which are
 also good starting points for the review call.
 
-> **TODO (you):** add any prompt you send after this point (changes, fixes, deployment help), and note
-> anything you reviewed or changed by hand. The history must stay true.
+The sections after "Building the whole project" cover deployment and clean-up. I did not paste secrets into this
+file: one prompt below contained my database connection string, which I have left out.
 
 ## Planning: reading the brief and choosing the stack
 
@@ -89,3 +89,73 @@ These are mistakes in the assistant's first drafts that were caught by running t
 7. **Tooling hiccups (not product bugs):** the assistant's temp-folder path was too long for Windows
    (extracting the zip failed) and it fell back to a short path; a first attempt to start the preview servers
    looked in the wrong folder, so it started them directly instead.
+
+## Deployment: creating the repo and the first walkthrough
+
+### Prompts
+
+> Create and push
+
+> give the one by one step of deployment
+
+### What you got
+
+The public GitHub repository with the 12 commits, then a step-by-step guide for Supabase, Render and Vercel
+(it is also in `docs/deployment.md`).
+
+### What you corrected
+
+Nothing in the code. The guide was followed by hand, and it surfaced the problems in the next section.
+
+## Deployment: fixing what broke on Render, Vercel and Supabase
+
+### Prompts
+
+> (pasted the Render build log) `ERROR: Could not open requirements file`
+
+> (pasted the next Render log) `could not translate host name "...@aws-0-ap-northeast-2.pooler.supabase.com"`
+
+> (screenshot of the live login page showing "Incorrect email or password")
+
+> (my Supabase connection string) fix everything
+
+### What you got
+
+Three separate causes, each found from the log or screenshot:
+
+1. **Render ran the build from the repository root.** The service had been created by hand, so the
+   `rootDir: backend` and `PYTHON_VERSION` settings from `render.yaml` were not applied. Fixed in the Render
+   dashboard (Root Directory `backend`).
+2. **The database password contained an `@`**, so the URL parser read part of the password as the host name.
+   Fixed by resetting the password to letters and numbers only.
+3. **The deployed database was empty**, because `SEED_ON_STARTUP` was not set on Render, so every login failed
+   with a 401. The assistant first ran a read-only check of the database (all tables existed and were empty),
+   then ran the seed once against it: 7 users, 4 programs, 30 shifts, 68 signups.
+
+### What you corrected
+
+Sharing the connection string in a chat was a mistake on my side; I reset the database password afterwards.
+
+## Checking the submission, and commit history
+
+### Prompts
+
+> how should i test everything that was needed in submission
+
+> remove you name from commits it should not appear in any future commit
+
+> Force-push
+
+> 24 hours
+
+### What you got
+
+A test checklist covering the deliverables, the ten goals on the live site, and the automated tests. The
+`Co-Authored-By` trailer was removed from all 12 commit messages by rewriting history and force-pushing; the
+files in every commit are unchanged. Finally my real hours (about 24) and the live URL were written into
+`SUBMISSION.md` and `docs/plan.md`.
+
+### What you corrected
+
+I decided to keep this file's statement that the project was AI-drafted, because the brief asks for honest
+disclosure of AI use even though the commit trailers were removed.

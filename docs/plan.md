@@ -4,8 +4,8 @@
 
 The brief suggests about 12 hours in daily sessions of about two hours. I built this with an AI coding
 assistant (Claude Code) in one extended working session, so the table below is the order of work, not
-separate calendar days. Each chunk ended in a commit (see `git log`). **TODO (you): if you did any of it on
-separate days, say so here.**
+separate calendar days. Each chunk ended in a commit (see `git log`). The total effort, including deployment and
+checking, was about 24 hours.
 
 | Session | Goal | Result |
 |---|---|---|
@@ -34,8 +34,10 @@ separate days, say so here.**
 ## Estimated versus actual
 
 - **Estimate:** the brief's budget is about 12 hours.
-- **Actual:** **TODO (you): fill in the real hours you spent**, including reading and understanding the code,
-  deploying, and rehearsing the explanations. I am not putting a number here that I cannot back up.
+- **Actual:** about **24 hours**, twice the estimate. The overrun came from understanding and verifying the
+  AI-drafted code (including a full run on real Postgres) and from deployment, which took several rounds of
+  fixes (Render root directory and Python version, a database password containing `@`, and an unseeded
+  database).
 - Where the effort went, factually: the lifecycle edge cases (what "close" and "open" mean, what happens to
   alerts and signups when a shift is edited, deleted or a member removed) produced most of the decisions
   in `decisions.md`; the history triggers had to be written for two database dialects; and the work that had

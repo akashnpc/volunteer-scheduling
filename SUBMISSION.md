@@ -3,7 +3,7 @@
 ## Links
 
 - **GitHub repository:** https://github.com/akashnpc/volunteer-scheduling
-- **Live application:** **TODO: paste the Vercel URL here after deploying** (see `docs/deployment.md`)
+- **Live application:** https://volunteer-scheduling-pi.vercel.app (deployment steps are in `docs/deployment.md`)
 
 ## Notes for the reviewer
 
@@ -62,8 +62,9 @@ a browser), no migrations tool, no password reset, single organisation timezone.
 
 ## How much time did you actually spend?
 
-**TODO (you): write your real number of hours and how they were split** (reading and understanding the code,
-deployment, rehearsing). The assistant cannot know this.
+About **24 hours** in total, which is twice the brief's 12-hour budget. That includes building the project with
+an AI assistant, reading and understanding the code it produced, running it against a real Postgres, deploying
+to Supabase, Render and Vercel (which took several rounds of fixes), and checking the result.
 
 ## What would you do next, with another 12 hours?
 
