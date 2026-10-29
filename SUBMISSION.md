@@ -77,8 +77,10 @@ to Supabase, Render and Vercel (which took several rounds of fixes), and checkin
 
 ## What are you least happy with in this codebase, and why?
 
-- `services/shifts.py` has grown to hold creation, editing, state machine, search and presentation. Search and
-  `to_out` should move out; right now it is the file a new reader has to hold most in their head.
+- `services/shifts.py` still holds creation, editing, the state machine, overlap and closing in one file
+  (about 230 lines; search and response shaping were moved out to `search.py` and `presenters.py`), and it
+  and `signups.py` import each other, which `delete_shift` works around with a local import. Pulling the
+  state machine into its own module would remove that cycle.
 - The denormalised `signup_count`/`state` columns trade query simplicity for a drift risk that I only mitigate
   with a single writer, a CHECK constraint and tests, not with a database-level guarantee.
 - The frontend has little reuse between the program page forms and the shift edit form, and no automated tests.

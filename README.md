@@ -39,6 +39,7 @@ Demo logins (after seeding), password `Demo1234!`: `coordinator@example.com`, `a
 
 ```bash
 cd backend && pytest
+cd backend && ruff check app tests   # lint (settings in backend/pyproject.toml)
 ```
 
 The tests freeze the clock and exercise the rules through the HTTP API: roles, the shift lifecycle and
@@ -55,6 +56,6 @@ backend/app/
   deps.py          auth + coordinator-only guard      seed.py     demo data
 frontend/src/
   app/             pages (dashboard, shifts, programs, alerts, people, login)
-  components/      shift table, timeline, program forms
+  components/      shift table, timeline, program forms, shift detail sections
   lib/             API client, auth context, formatting
 ```

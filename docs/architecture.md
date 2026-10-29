@@ -15,7 +15,8 @@
 - **FastAPI backend** (`backend/app/`), in three layers:
   - `routers/`: HTTP only (parse the request, call a service, commit, shape the response).
   - `services/`: the rules (signup lifecycle, overlap check, fill-state machine, alerts, dashboard,
-    schedule generator, roster CSV). No HTTP in here.
+    schedule generator, roster CSV) plus `search.py` (shift filters, sorting, pagination) and `presenters.py`
+    (row to response model). No HTTP in here.
   - `models.py` / `db_setup.py`: tables and the constraints the database enforces itself.
 - **PostgreSQL** is the only stateful piece. There is no cache, queue or worker.
 
