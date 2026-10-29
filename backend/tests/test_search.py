@@ -55,7 +55,7 @@ def test_pagination_reports_total_matches(client, world, make_shift):
     last = client.get("/api/shifts?page_size=3&page=3", headers=c).json()
     assert (first["total"], first["pages"], len(first["items"])) == (7, 3, 3)
     assert len(last["items"]) == 1 and last["page"] == 3
-    assert set(s["id"] for s in first["items"]).isdisjoint(s["id"] for s in last["items"])
+    assert {s["id"] for s in first["items"]}.isdisjoint(s["id"] for s in last["items"])
 
 
 def test_mine_filter_and_my_signup_id(client, world, make_shift):

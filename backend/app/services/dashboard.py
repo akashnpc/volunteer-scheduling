@@ -41,7 +41,7 @@ def build(db: Session, user: User) -> dict:
 
     in_week = (Shift.date >= week_start, Shift.date < week_end)
 
-    by_state = {s: 0 for s in STATES}
+    by_state = dict.fromkeys(STATES, 0)
     for state, n in db.execute(
         select(Shift.state, func.count(Shift.id))
         .join(Program, Program.id == Shift.program_id)
@@ -51,7 +51,7 @@ def build(db: Session, user: User) -> dict:
         by_state[state] = n
 
     programs = db.scalars(select(Program).where(*program_scope).order_by(Program.name)).all()
-    per_program = {p.id: {"program_id": p.id, "program_name": p.name, **{s: 0 for s in STATES}} for p in programs}
+    per_program = {p.id: {"program_id": p.id, "program_name": p.name, **dict.fromkeys(STATES, 0)} for p in programs}
     for program_id, state, n in db.execute(
         select(Shift.program_id, Shift.state, func.count(Shift.id))
         .join(Program, Program.id == Shift.program_id)

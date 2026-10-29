@@ -1,18 +1,17 @@
-"""Shift rules: creation, editing, the fill-state machine, closing, deleting, search."""
+"""Shift rules: creation, editing, the fill-state machine, overlap, closing and deleting."""
 from datetime import date, datetime, time, timedelta
 
-from sqlalchemy import case, delete, func, or_, select
-from sqlalchemy.orm import Session, contains_eager
+from sqlalchemy import delete, select
+from sqlalchemy.orm import Session
 
 from app import clock
-from app.errors import bad_request, conflict, not_found
+from app.errors import conflict, not_found
 from app.models import (
     CLOSED,
     COORDINATOR,
     FILLED,
     OPEN,
     PARTIAL,
-    STATE_LABELS,
     AlertDismissal,
     Program,
     ProgramMember,
@@ -20,7 +19,7 @@ from app.models import (
     Signup,
     User,
 )
-from app.schemas import ShiftOut
+from app.schemas import ShiftIn, ShiftPatch
 from app.services import events
 
 
@@ -92,41 +91,6 @@ def refresh_state(db: Session, shift: Shift, actor_id: int) -> None:
     set_state(db, shift, derive_state(shift.signup_count, shift.required_headcount), actor_id)
 
 
-# ---- presentation ---------------------------------------------------------
-def to_out(shift: Shift, my_signup_id: int | None = None) -> ShiftOut:
-    return ShiftOut(
-        id=shift.id,
-        program_id=shift.program_id,
-        program_name=shift.program.name,
-        program_archived=shift.program.archived_at is not None,
-        date=shift.date,
-        start_time=shift.start_time,
-        duration_minutes=shift.duration_minutes,
-        location=shift.location,
-        required_headcount=shift.required_headcount,
-        signup_count=shift.signup_count,
-        spots_left=max(shift.required_headcount - shift.signup_count, 0),
-        state=shift.state,
-        state_label=STATE_LABELS[shift.state],
-        starts_at=shift.starts_at,
-        ends_at=shift.ends_at,
-        my_signup_id=my_signup_id,
-    )
-
-
-def my_signup_ids(db: Session, user: User, shift_ids: list[int]) -> dict[int, int]:
-    if not shift_ids:
-        return {}
-    rows = db.execute(
-        select(Signup.shift_id, Signup.id).where(
-            Signup.volunteer_id == user.id,
-            Signup.cancelled_at.is_(None),
-            Signup.shift_id.in_(shift_ids),
-        )
-    )
-    return {shift_id: signup_id for shift_id, signup_id in rows}
-
-
 # ---- overlap ------------------------------------------------------------
 def find_overlap(
     db: Session, volunteer_id: int, starts_at: datetime, ends_at: datetime, exclude_shift_id: int | None
@@ -189,7 +153,7 @@ def create_shift_row(
     return shift
 
 
-def create_shift(db: Session, program: Program, data, actor: User) -> Shift:
+def create_shift(db: Session, program: Program, data: ShiftIn, actor: User) -> Shift:
     ensure_program_writable(program)
     if slot_taken(db, program.id, data.date, data.start_time):
         raise conflict(
@@ -201,7 +165,7 @@ def create_shift(db: Session, program: Program, data, actor: User) -> Shift:
     )
 
 
-def update_shift(db: Session, shift: Shift, patch, actor: User) -> Shift:
+def update_shift(db: Session, shift: Shift, patch: ShiftPatch, actor: User) -> Shift:
     if shift.state == CLOSED:
         raise conflict("This shift is closed and can no longer be edited")
     ensure_program_writable(shift.program)
@@ -278,69 +242,3 @@ def delete_shift(db: Session, shift: Shift, actor: User) -> None:
 
 def add_note(db: Session, shift: Shift, message: str, actor: User) -> None:
     events.log(db, shift.id, "note", actor.id, message=message)
-
-
-# ---- search (goal 6) ----------------------------------------------------------
-STATE_ORDER = case(
-    (Shift.state == OPEN, 0),
-    (Shift.state == PARTIAL, 1),
-    (Shift.state == FILLED, 2),
-    else_=3,
-)
-
-
-def _like_escape(token: str) -> str:
-    return token.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-
-
-def search_shifts(
-    db: Session, user: User, *, q: str | None, program_id: int | None, state: str | None,
-    date_from: date | None, date_to: date | None, mine: bool, include_archived: bool,
-    sort: str, order: str, page: int, page_size: int,
-) -> tuple[list[Shift], int]:
-    conds = [Shift.deleted_at.is_(None)]
-    if user.role == COORDINATOR:
-        if not include_archived:
-            conds.append(Program.archived_at.is_(None))
-    else:
-        conds += [Program.archived_at.is_(None), Shift.program_id.in_(visible_program_ids(user))]
-    if program_id is not None:
-        conds.append(Shift.program_id == program_id)
-    if state:
-        if state not in STATE_LABELS:
-            raise bad_request(f"Unknown fill state '{state}'")
-        conds.append(Shift.state == state)
-    if date_from:
-        conds.append(Shift.date >= date_from)
-    if date_to:
-        conds.append(Shift.date <= date_to)
-    if mine:
-        conds.append(
-            Shift.id.in_(
-                select(Signup.shift_id).where(Signup.volunteer_id == user.id, Signup.cancelled_at.is_(None))
-            )
-        )
-    for token in (q or "").split():
-        pattern = f"%{_like_escape(token)}%"
-        conds.append(or_(Program.name.ilike(pattern, escape="\\"), Shift.location.ilike(pattern, escape="\\")))
-
-    keys = {
-        "date": [Shift.date, Shift.start_time],
-        "start_time": [Shift.start_time, Shift.date],
-        "state": [STATE_ORDER, Shift.date, Shift.start_time],
-    }
-    if sort not in keys:
-        raise bad_request("sort must be one of: date, start_time, state")
-    ordering = [k.desc() if order == "desc" else k.asc() for k in keys[sort]] + [Shift.id.asc()]
-
-    total = db.scalar(select(func.count(Shift.id)).join(Program, Program.id == Shift.program_id).where(*conds))
-    rows = db.scalars(
-        select(Shift)
-        .join(Program, Program.id == Shift.program_id)
-        .options(contains_eager(Shift.program))
-        .where(*conds)
-        .order_by(*ordering)
-        .limit(page_size)
-        .offset((page - 1) * page_size)
-    ).all()
-    return rows, total or 0

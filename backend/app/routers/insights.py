@@ -6,7 +6,7 @@ from app.db import get_db
 from app.deps import coordinator_only, current_user
 from app.models import User
 from app.schemas import AlertOut, AlertsOut
-from app.services import alerts, dashboard, shifts
+from app.services import alerts, dashboard, presenters, shifts
 
 router = APIRouter(tags=["insights"])
 
@@ -19,11 +19,11 @@ def get_dashboard(user: User = Depends(current_user), db: Session = Depends(get_
 @router.get("/alerts", response_model=AlertsOut)
 def get_alerts(user: User = Depends(current_user), db: Session = Depends(get_db)):
     rows = alerts.list_alerts(db, user)
-    mine = shifts.my_signup_ids(db, user, [s.id for s, _ in rows])
+    mine = presenters.my_signup_ids(db, user, [s.id for s, _ in rows])
     return AlertsOut(
         count=sum(1 for _, dismissed in rows if not dismissed),
         items=[
-            AlertOut(**shifts.to_out(s, mine.get(s.id)).model_dump(), dismissed=dismissed)
+            AlertOut(**presenters.to_out(s, mine.get(s.id)).model_dump(), dismissed=dismissed)
             for s, dismissed in rows
         ],
     )

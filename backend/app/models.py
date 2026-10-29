@@ -1,5 +1,6 @@
 ﻿"""Database tables. See docs/schema.md for the reasoning behind each constraint."""
-from datetime import date as DateType, datetime, time
+from datetime import date as DateType
+from datetime import datetime, time
 
 from sqlalchemy import (
     CheckConstraint,

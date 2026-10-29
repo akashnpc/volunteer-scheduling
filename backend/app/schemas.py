@@ -1,6 +1,7 @@
 ﻿"""Request and response shapes. Roles and fill states are never accepted from clients
 except where a coordinator explicitly creates a user."""
-from datetime import date as DateType, datetime, time
+from datetime import date as DateType
+from datetime import datetime, time
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator

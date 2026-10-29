@@ -10,9 +10,15 @@ from app.deps import coordinator_only, current_user
 from app.errors import bad_request, conflict, not_found
 from app.models import COORDINATOR, VOLUNTEER, Program, ProgramMember, Shift, User
 from app.schemas import (
-    MemberIn, ProgramIn, ProgramOut, ProgramPatch, ScheduleIn, ScheduleOut, UserOut,
+    MemberIn,
+    ProgramIn,
+    ProgramOut,
+    ProgramPatch,
+    ScheduleIn,
+    ScheduleOut,
+    UserOut,
 )
-from app.services import roster, schedule, shifts
+from app.services import presenters, roster, schedule, shifts
 from app.services.signups import cancel_for_removed_member
 
 router = APIRouter(prefix="/programs", tags=["programs"])
@@ -160,7 +166,7 @@ def generate_schedule(
     program = _get(db, program_id, user)
     created, skipped = schedule.generate(db, program, data, user)
     db.commit()
-    return ScheduleOut(created=[shifts.to_out(s) for s in created], skipped=skipped)
+    return ScheduleOut(created=[presenters.to_out(s) for s in created], skipped=skipped)
 
 
 @router.get("/{program_id}/roster.csv")

@@ -53,7 +53,7 @@ def create_signup(db: Session, shift_id: int, volunteer_id: int, actor: User) ->
         db.flush()
     except IntegrityError:  # unique index backstop if two requests slipped through
         db.rollback()
-        raise conflict("That signup already exists")
+        raise conflict("That signup already exists") from None
     shift.signup_count += 1
     events.log(
         db, shift.id, "signup", actor.id, volunteer_id=volunteer.id,
