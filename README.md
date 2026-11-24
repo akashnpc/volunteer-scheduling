@@ -10,7 +10,7 @@ still needed is always a live count. Built for take-home assignment 18 (the orig
 
 Start with [SUBMISSION.md](SUBMISSION.md) for links, demo logins and the goal checklist, then the docs:
 [architecture](docs/architecture.md), [schema](docs/schema.md), [plan](docs/plan.md),
-[decisions](docs/decisions.md), [AI prompts](docs/ai-prompts.md), [deployment](docs/deployment.md).
+[decisions](docs/decisions.md), [deployment](docs/deployment.md).
 
 ## Run it locally
 
